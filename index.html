@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Live Translation</title>
   <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,9 +14,14 @@
     }
 
     #setup {
-      padding: 20px;
+      padding: 18px;
       border-bottom: 2px solid #ddd;
       margin-bottom: 20px;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 34px;
     }
 
     input, button {
@@ -29,28 +35,63 @@
       font-weight: bold;
     }
 
-    .lang {
-      margin-bottom: 22px;
-      padding: 20px;
-      border: 3px solid #ddd;
-      border-radius: 14px;
-    }
-
-    h2 {
-      margin: 0 0 12px 0;
-      font-size: 28px;
-    }
-
-    .text {
-      font-size: 42px;
-      font-weight: bold;
-      line-height: 1.2;
-    }
-
     #status {
       font-size: 18px;
       font-weight: bold;
       margin-top: 10px;
+    }
+
+    .lang {
+      margin-bottom: 22px;
+      padding: 22px;
+      border-radius: 16px;
+      border: 4px solid #ddd;
+      background: #fafafa;
+    }
+
+    .spanish {
+      border-top: 14px solid #0057B7;
+    }
+
+    .portuguese {
+      border-top: 14px solid #009C3B;
+    }
+
+    .creole {
+      border-top: 14px solid #D21034;
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 34px;
+      letter-spacing: 1px;
+    }
+
+    .spanish h2,
+    .spanish .text {
+      color: #0057B7;
+    }
+
+    .portuguese h2,
+    .portuguese .text {
+      color: #009C3B;
+    }
+
+    .creole h2,
+    .creole .text {
+      color: #D21034;
+    }
+
+    .text {
+      font-size: 56px;
+      font-weight: bold;
+      line-height: 1.2;
+    }
+
+    .hint {
+      font-size: 15px;
+      color: #555;
+      margin-top: 8px;
     }
   </style>
 </head>
@@ -66,20 +107,21 @@
     <button onclick="stopTranslation()">Stop</button>
 
     <div id="status">Status: Ready</div>
+    <div class="hint">Use Google Chrome and allow microphone access.</div>
   </div>
 
-  <div class="lang">
-    <h2>Español</h2>
+  <div class="lang spanish">
+    <h2>ESPAÑOL</h2>
     <div id="es" class="text">Esperando traducción...</div>
   </div>
 
-  <div class="lang">
-    <h2>Português</h2>
+  <div class="lang portuguese">
+    <h2>PORTUGUÊS</h2>
     <div id="pt" class="text">Aguardando tradução...</div>
   </div>
 
-  <div class="lang">
-    <h2>Kreyòl Ayisyen</h2>
+  <div class="lang creole">
+    <h2>KREYÒL AYISYEN</h2>
     <div id="ht" class="text">Ap tann tradiksyon...</div>
   </div>
 
@@ -116,11 +158,13 @@
       const speechConfig = SpeechSDK.SpeechTranslationConfig.fromSubscription(key, region);
 
       speechConfig.speechRecognitionLanguage = "en-US";
+
       speechConfig.addTargetLanguage("es");
       speechConfig.addTargetLanguage("pt");
       speechConfig.addTargetLanguage("ht");
 
       const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+
       recognizer = new SpeechSDK.TranslationRecognizer(speechConfig, audioConfig);
 
       recognizer.recognizing = function (s, e) {
