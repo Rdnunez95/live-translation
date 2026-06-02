@@ -1,53 +1,172 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8" />
   <title>Live Translation</title>
+  <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #ffffff;
-      padding: 30px;
+      margin: 0;
+      padding: 24px;
+    }
+
+    #setup {
+      padding: 20px;
+      border-bottom: 2px solid #ddd;
+      margin-bottom: 20px;
+    }
+
+    input, button {
+      font-size: 18px;
+      padding: 10px;
+      margin: 5px;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: bold;
     }
 
     .lang {
-      margin-bottom: 40px;
+      margin-bottom: 22px;
       padding: 20px;
-      border: 2px solid #ddd;
-      border-radius: 10px;
+      border: 3px solid #ddd;
+      border-radius: 14px;
     }
 
     h2 {
-      margin-top: 0;
+      margin: 0 0 12px 0;
+      font-size: 28px;
     }
 
     .text {
-      font-size: 32px;
+      font-size: 42px;
       font-weight: bold;
+      line-height: 1.2;
+    }
+
+    #status {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 10px;
     }
   </style>
 </head>
+
 <body>
+  <div id="setup">
+    <h1>Live Translation</h1>
 
-<div class="lang">
-  <h2>English</h2>
-  <div class="text">
-    Good morning and welcome to our ceremony.
+    <input id="key" type="password" placeholder="Paste Azure Resource Key here" size="45" />
+    <input id="region" type="text" value="eastus" size="10" />
+
+    <button onclick="startTranslation()">Start Translation</button>
+    <button onclick="stopTranslation()">Stop</button>
+
+    <div id="status">Status: Ready</div>
   </div>
-</div>
 
-<div class="lang">
-  <h2>Español</h2>
-  <div class="text">
-    Buenos días y bienvenidos a nuestra ceremonia.
+  <div class="lang">
+    <h2>Español</h2>
+    <div id="es" class="text">Esperando traducción...</div>
   </div>
-</div>
 
-<div class="lang">
-  <h2>Português</h2>
-  <div class="text">
-    Bom dia e bem-vindos à nossa cerimônia.
+  <div class="lang">
+    <h2>Português</h2>
+    <div id="pt" class="text">Aguardando tradução...</div>
   </div>
-</div>
 
+  <div class="lang">
+    <h2>Kreyòl Ayisyen</h2>
+    <div id="ht" class="text">Ap tann tradiksyon...</div>
+  </div>
+
+  <script>
+    let recognizer;
+
+    function setStatus(message) {
+      document.getElementById("status").innerText = "Status: " + message;
+    }
+
+    function updateTranslations(result) {
+      if (!result || !result.translations) return;
+
+      const es = result.translations.get("es");
+      const pt = result.translations.get("pt");
+      const ht = result.translations.get("ht");
+
+      if (es) document.getElementById("es").innerText = es;
+      if (pt) document.getElementById("pt").innerText = pt;
+      if (ht) document.getElementById("ht").innerText = ht;
+    }
+
+    function startTranslation() {
+      const key = document.getElementById("key").value.trim();
+      const region = document.getElementById("region").value.trim();
+
+      if (!key) {
+        alert("Please paste your Azure Resource Key.");
+        return;
+      }
+
+      setStatus("Starting... Allow microphone access.");
+
+      const speechConfig = SpeechSDK.SpeechTranslationConfig.fromSubscription(key, region);
+
+      speechConfig.speechRecognitionLanguage = "en-US";
+      speechConfig.addTargetLanguage("es");
+      speechConfig.addTargetLanguage("pt");
+      speechConfig.addTargetLanguage("ht");
+
+      const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+      recognizer = new SpeechSDK.TranslationRecognizer(speechConfig, audioConfig);
+
+      recognizer.recognizing = function (s, e) {
+        updateTranslations(e.result);
+      };
+
+      recognizer.recognized = function (s, e) {
+        updateTranslations(e.result);
+      };
+
+      recognizer.canceled = function (s, e) {
+        setStatus("Canceled: " + e.errorDetails);
+      };
+
+      recognizer.sessionStarted = function () {
+        setStatus("Listening...");
+      };
+
+      recognizer.sessionStopped = function () {
+        setStatus("Stopped.");
+      };
+
+      recognizer.startContinuousRecognitionAsync(
+        function () {
+          setStatus("Listening...");
+        },
+        function (err) {
+          setStatus("Error: " + err);
+        }
+      );
+    }
+
+    function stopTranslation() {
+      if (recognizer) {
+        recognizer.stopContinuousRecognitionAsync(
+          function () {
+            recognizer.close();
+            recognizer = undefined;
+            setStatus("Stopped.");
+          },
+          function (err) {
+            setStatus("Error stopping: " + err);
+          }
+        );
+      }
+    }
+  </script>
 </body>
 </html>
